@@ -16,7 +16,9 @@ from FlaskAPP.models.doctor import Doctor
 from random import randint
 import flask_marshmallow
 import xlsxwriter
-import datetime, time
+import datetime
+import time
+from .Util import circle_fill, pressure_fill
 
 app = Flask(__name__)
 
@@ -209,55 +211,23 @@ def get_excel():
         dir_path = Config.APP_ROOT + '/file-downloads/'
         filename = "{id}_testdata.xlsx".format(id=testinfo.PatientID)
         if os.path.isfile(dir_path + filename):  # check to see if file already exists
+            print('File exists, sending old')
             return send_file(dir_path + filename, as_attachment=True)
 
+        print('Creating new excel file')
         workbook = xlsxwriter.Workbook(dir_path + filename)  # Create xlsx file
-        formula = workbook.add_worksheet()
-        raw = workbook.add_worksheet()
-        final = workbook.add_worksheet()
+        #  formula = workbook.add_worksheet('formula')
+        raw_circle = workbook.add_worksheet('circle')
+        raw_pressure = workbook.add_worksheet('pressure')
+        final = workbook.add_worksheet('final')
 
-        # Header
-        raw.write(0, 0, 'CircleID')
-        raw.write(0, 1, 'symbol')
-        raw.write(0, 2, 'begin_circle')
-        raw.write(0, 3, 'end_circle')
-        raw.write(0, 4, 'total_time')
-        raw.write(0, 5, 'CircleID')
-        raw.write(0, 6, 'PressureID')
-        raw.write(0, 7, 'Pressure')
-        raw.write(3, 10, 'TestID')
-        raw.write(3, 11, 'PatientID')
-        raw.write(3, 12, 'Date')
-        raw.write(3, 13, 'DoctorID')
-        raw.write(3, 14, 'Test')
-        raw.write(3, 15, 'Length')
-        raw.write(4, 10, testinfo.TestID)
-        raw.write(4, 11, testinfo.PatientID)
-        raw.write(4, 12, testinfo.DateTaken)
-        raw.write(4, 13, testinfo.DoctorID)
-        raw.write(4, 14, testinfo.TestName)
-        raw.write(4, 15, testinfo.TestLength)
-        print(testinfo.TestID)
-        print(testinfo.DateTaken)
-        print(testinfo.TestName)
         # Grab all points from table
         circles = db.engine.execute("SELECT * FROM test.circles WHERE TestID='{id}';".format(id=test_id))
         pressure = Pressure.query.filter_by(TestID=test_id).all()  # get pressure from test
-        for item in circles:  # loop circles 5 columns
-            raw.write(row, col, item.CircleID)
-            raw.write(row, col + 1, item.symbol)
-            raw.write(row, col + 2, item.begin_circle)
-            raw.write(row, col + 3, item.end_circle)
-            raw.write(row, col + 4, item.total_time)
-            row = row + 1
 
-        row = 1
-        col = 5
-        for item in pressure:  # loop pressure 3 columns
-            raw.write(row, col, item.CircleID)
-            raw.write(row, col + 1, item.PressureID)
-            raw.write(row, col + 2, item.Pressure)
-            row = row + 1
+        circle_fill(raw_circle, testinfo, circles)
+
+        pressure_fill(raw_pressure, testinfo, pressure)
 
         workbook.close()
         return send_file(dir_path + filename, as_attachment=True)  # send file as attachment
