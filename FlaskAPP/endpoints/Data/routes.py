@@ -219,19 +219,20 @@ def get_excel():
         #  formula = workbook.add_worksheet('formula')
         raw_circle = workbook.add_worksheet('circle')
         raw_pressure = workbook.add_worksheet('pressure')
-        final = workbook.add_worksheet('final')
+        final = workbook.add_worksheet('formula')
 
         # Grab all points from table
         circles = db.engine.execute("SELECT * FROM test.circles WHERE TestID='{id}';".format(id=test_id))
         pressure = Pressure.query.filter_by(TestID=test_id).all()  # get pressure from test
 
-        circle_fill(raw_circle, testinfo, circles)
+        circle_fill(raw_circle, testinfo, circles)  # generate circle file
 
-        pressure_fill(raw_pressure, testinfo, pressure)
+        pressure_fill(raw_pressure, pressure)  # generate pressure file
 
         workbook.close()
         return send_file(dir_path + filename, as_attachment=True)  # send file as attachment
     elif selection == '2':
+        # @TODO: move to Util.py file
         dir_path = Config.APP_ROOT + '/file-downloads/'
         filename = "{id}_questionnaire.xlsx".format(id=testinfo.PatientID)
         if os.path.isfile(dir_path + filename):
@@ -256,6 +257,7 @@ def get_excel():
 
         row = 1
         col = 5
+        # @TODO: arrange answers by corresponding question
         for item in answers:  # loop answers 5 columns
             question.write(row, col, item.Answer)
             # questions.write(row, col + 1, item['Answer'])
