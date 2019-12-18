@@ -1,0 +1,7 @@
+Main Issues: 
+Logout doesn't work properly. Current user is not cleared
+Replay is slightly broken, circles are not drawn accurately. Are slightly off
+    Fix clicking circles
+
+Smaller Issues:
+PyMySQL is using an outdated version of UTF8, wasn't able to find a solution
